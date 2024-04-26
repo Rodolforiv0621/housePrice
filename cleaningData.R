@@ -1,11 +1,18 @@
 library(dplyr)
+library(readr)
 library(stringr)
+options(scipen = 999)
 
 # Read the data
-data <- read.csv("C:/Users/roriv/OneDrive/Documents/Spring 24 School Work/Data mining/LACountyDBFinal.csv")
+data2 <- read.csv("C:/Users/roriv/OneDrive/Documents/Spring 24 School Work/Data mining/ProjectCrawler/CleanedLACountyDB.csv")
+
+data2$address <- gsub(",","",data2$address)
+#merged_data <- rbind(data2, data)
+
+
 
 # Remove "(lot)" from 'lot_size' and 'home_area'
-data$lot_size <- gsub("\\s*\\(lot\\)\\s*", "", data$lot_size, ignore.case = TRUE)
+#data$lot_size <- gsub("\\s*\\(lot\\)\\s*", "", data$lot_size, ignore.case = TRUE)
 data$home_area <- gsub("\\s*\\(lot\\)\\s*", "", data$home_area, ignore.case = TRUE)
 
 #Removing beds and baths from csv
@@ -33,9 +40,9 @@ convert_acres_to_sqft <- function(lot_size) {
 data$home_area <- sapply(data$home_area, convert_acres_to_sqft)
 
 # Convert bed, bath and price columns to numbers
-data$num_bed <- as.numeric(gsub("[^0-9.]", "", data$num_bed)) # Assuming fractional beds are not a concern
-data$num_bath <- as.numeric(gsub("[^0-9.]", "", data$num_bath)) # Assuming fractional baths can exist
-data$price <- as.numeric(gsub("[^0-9.]", "", gsub("\\$", "", data$price)))
+data$num_bed <- as.numeric(data$num_bed) # Assuming fractional beds are not a concern
+data$num_bath <- as.numeric(data$num_bath) # Assuming fractional baths can exist
+data$price <- as.integer(gsub("[^0-9.]", "", gsub("\\$", "", data$price)))
 
 # Remove zip and state from address
 data$address <- sub(", CA [0-9]{5}$", "", data$address)
@@ -44,25 +51,36 @@ data$address <- sub(", CA [0-9]{5}$", "", data$address)
 data$num_bed[is.na(data$num_bed)] <- median(data$num_bed, na.rm = TRUE)
 data$num_bath[is.na(data$num_bath)] <- median(data$num_bath, na.rm = TRUE)
 
-# Use Linear regression to fill in missing price values
+# Use Linear regression to fill in missing home_area values
 
 #seperate the missing value rows
-train_data <- filter(data, !is.na(lot_size))
-predict_data <- filter(data, is.na(lot_size))
+train_data <- filter(data, !is.na(home_area))
+predict_data <- filter(data, is.na(home_area))
 
-model <- lm(lot_size ~ num_bed + num_bath + home_area + price, data = train_data)
+model <- lm(home_area ~ num_bed + num_bath + zip_code + price, data = train_data)
 
-predicted_lot_size <- predict(model, newdata = predict_data)
+predicted_home_area <- predict(model, newdata = predict_data)
 
-predict_data$lot_size <- predicted_lot_size
+data$home_area[is.na(data$home_area)] <- predicted_home_area
 
-final_data <- rbind(train_data, predict_data)
+
+n_missing <- sum(is.na(data$price))
+data <- data %>% filter(!is.na(price))
+n_predictions <- length(predicted_home_area)
 
 # Drop the 'lot_size' column
 #data <- select(data, -lot_size)
 
-data_unique <- distinct(data)
-View(data_unique)
+data_unique <- distinct(merged_data)
+
+
+badEntries <- sum(rowSums(is.na(data)) > 2)
+goodEntries <- !(rowSums(is.na(data)) > 2)
+cleanedData <- data[goodEntries, ]
+data$
+data <- data %>% mutate(num_bath = replace(num_bath, num_bath == "-", NA))
+View(data)
+
 #Saving modified file
-write.csv(data_unique, "C:/Users/roriv/OneDrive/Documents/Spring 24 School Work/Data mining/noDupLACountyDB.csv", row.names = FALSE)
+#write.csv(data_unique, "C:/Users/roriv/OneDrive/Documents/Spring 24 School Work/Data mining/ProjectCrawler/LACountyHomesDB.csv", row.names = FALSE)
 
