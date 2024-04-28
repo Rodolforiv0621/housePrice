@@ -20,3 +20,8 @@ ggplot(data, aes(x = factor(num_bed), y = price)) +
   labs(title = "Property Prices by Number of Bedrooms Box plot", x = "Number of Bedrooms", y = "Price ($)") + ylim(0, 20000000)
 
 #scatter.smooth(data_unique$`91506`, data_unique$`1995000`, xlab = "Zip Code", ylab = "Price", xlim = c(91300, 91610), ylim = c(500000, 4000000))
+
+hist(data$price, main="Histogram of Home Prices", xlab="Price", breaks=50)
+boxplot(data$price, horizontal=TRUE, main="Boxplot of Home Prices")
+summary(data$price)
+plot(data$price, type='p', main="Scatter Plot of Home Prices", xlab="Index", ylab="Price", pch=19, col=rgb(0,0,1,0.5))

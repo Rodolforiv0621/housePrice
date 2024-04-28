@@ -1,10 +1,13 @@
 library(dplyr)
 library(readr)
 library(stringr)
+install.packages("isotree")
+library(ggplot2)
+library(isotree)
 options(scipen = 999)
-
+set.seed(111)
 # Read the data
-data2 <- read.csv("C:/Users/roriv/OneDrive/Documents/Spring 24 School Work/Data mining/ProjectCrawler/CleanedLACountyDB.csv")
+data <- read.csv("C:/Users/roriv/OneDrive/Documents/Spring 24 School Work/Data mining/ProjectCrawler/LACountyHomesDB.csv")
 
 data2$address <- gsub(",","",data2$address)
 #merged_data <- rbind(data2, data)
@@ -81,6 +84,23 @@ data$
 data <- data %>% mutate(num_bath = replace(num_bath, num_bath == "-", NA))
 View(data)
 
+removed <- data[data$price < 80000000, ]
+View(removed)
+
+
+model <- isolation.forest(data[, c("zip_code", "num_bed", "num_bath", "home_area")], ntree=500, sample_size=256)
+
+
+scores <-predict(model, data[, c("zip_code", "num_bed", "num_bath", "home_area")], type="score")
+data$anomaly_score <- scores
+
+threshold <- quantile(data$anomaly_score, 0.9988)
+data$outlier <- data$anomaly_score > threshold
+
+outliers_data <- data[data$outlier, ]
+
+ggplot(data, aes(x=home_area, y = price, color=outlier)) + geom_point() + theme_minimal() + labs(title = "Isolation Forest Outliers: Home area vs Price")
+
 #Saving modified file
-#write.csv(data_unique, "C:/Users/roriv/OneDrive/Documents/Spring 24 School Work/Data mining/ProjectCrawler/LACountyHomesDB.csv", row.names = FALSE)
+write.csv(removed, "C:/Users/roriv/OneDrive/Documents/Spring 24 School Work/Data mining/ProjectCrawler/LACountyHomesDB.csv", row.names = FALSE)
 
