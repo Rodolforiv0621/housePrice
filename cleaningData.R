@@ -3,8 +3,6 @@ library(readr)
 library(stringr)
 library(ggplot2)
 library(isotree)
-install.packages("dbscan", dependencies = TRUE)
-library(dbscan)
 options(scipen = 999)
 set.seed(111)
 # Read the data
@@ -104,13 +102,6 @@ ggplot(data, aes(x=home_area, y = price, color=outlier)) + geom_point() + theme_
 
 data <- data[!data$outlier, c("address", "zip_code", "num_bed", "num_bath", "home_area", "price")]
 ggplot(data, aes(x=home_area, y = price)) + geom_point() + theme_minimal() + labs(title = "Removed Outlier Scatter Plot")
-#cleanedData <- cleanedData %>% filter(address != "4652 Gratian Street Los Angeles")
-
-
-# 9650 Cedarbrook Drive Beverly Hills : 65959
-# 4652 Gratian Street Los Angeles : 65854
-
-
 
 
 #Saving modified file
