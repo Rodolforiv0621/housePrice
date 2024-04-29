@@ -1,4 +1,3 @@
-install.packages("caret")
 library(caret)
 
 train_control <-  trainControl(

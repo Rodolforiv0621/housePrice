@@ -95,7 +95,7 @@ model <- isolation.forest(data[, c("home_area","price", "zip_code")], ntree=400,
 scores <-predict(model, data[, c("home_area","price", "zip_code")], type="score")
 data$anomaly_score <- scores
 
-threshold <- quantile(data$anomaly_score, 0.75)
+threshold <- quantile(data$anomaly_score, 0.65)
 data$outlier <- data$anomaly_score > threshold
 
 outliers_data <- data[data$outlier, ]
@@ -104,27 +104,12 @@ ggplot(data, aes(x=home_area, y = price, color=outlier)) + geom_point() + theme_
 
 data <- data[!data$outlier, c("address", "zip_code", "num_bed", "num_bath", "home_area", "price")]
 ggplot(data, aes(x=home_area, y = price)) + geom_point() + theme_minimal() + labs(title = "Removed Outlier Scatter Plot")
-cleanedData <- cleanedData %>% filter(address != "4652 Gratian Street Los Angeles")
+#cleanedData <- cleanedData %>% filter(address != "4652 Gratian Street Los Angeles")
 
 
 # 9650 Cedarbrook Drive Beverly Hills : 65959
 # 4652 Gratian Street Los Angeles : 65854
 
-data_normalized <- scale(data[,c("zip_code", "num_bed", "num_bath", "home_area", "price")])
-
-dbScan <- dbscan(data_normalized, eps=0.2, minPts=4)
-
-# Identifying points labeled as noise (-1 indicates noise/outliers)
-outliers <- which(dbScan$cluster == -1)
-
-# Examine outliers
-outlier_data <- data[outliers, ]
-print(outlier_data)
-
-# Basic plot of clusters and outliers
-plot(data_normalized[, c('home_area', 'price')], col = dbscan_result$cluster + 1L, pch = 16)
-points(data_normalized[outliers, 'home_area'], data_normalized[outliers, 'price'], col = 'red', pch = 19)
-legend("topright", legend = c("Clusters", "Outliers"), col = c("black", "red"), pch = 16)
 
 
 
