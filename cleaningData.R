@@ -1,13 +1,14 @@
 library(dplyr)
 library(readr)
 library(stringr)
-install.packages("isotree")
 library(ggplot2)
 library(isotree)
+install.packages("dbscan", dependencies = TRUE)
+library(dbscan)
 options(scipen = 999)
 set.seed(111)
 # Read the data
-data <- read.csv("C:/Users/roriv/OneDrive/Documents/Spring 24 School Work/Data mining/ProjectCrawler/LACountyHomesDB.csv")
+data <- read.csv("/Users/rodolforivera/Documents/housePrice/LACountyHomesDB.csv")
 
 data2$address <- gsub(",","",data2$address)
 #merged_data <- rbind(data2, data)
@@ -88,18 +89,44 @@ removed <- data[data$price < 80000000, ]
 View(removed)
 
 
-model <- isolation.forest(data[, c("zip_code", "num_bed", "num_bath", "home_area")], ntree=500, sample_size=256)
+model <- isolation.forest(data[, c("home_area","price", "zip_code")], ntree=400, sample_size=256)
 
 
-scores <-predict(model, data[, c("zip_code", "num_bed", "num_bath", "home_area")], type="score")
+scores <-predict(model, data[, c("home_area","price", "zip_code")], type="score")
 data$anomaly_score <- scores
 
-threshold <- quantile(data$anomaly_score, 0.9988)
+threshold <- quantile(data$anomaly_score, 0.75)
 data$outlier <- data$anomaly_score > threshold
 
 outliers_data <- data[data$outlier, ]
 
 ggplot(data, aes(x=home_area, y = price, color=outlier)) + geom_point() + theme_minimal() + labs(title = "Isolation Forest Outliers: Home area vs Price")
+
+data <- data[!data$outlier, c("address", "zip_code", "num_bed", "num_bath", "home_area", "price")]
+ggplot(data, aes(x=home_area, y = price)) + geom_point() + theme_minimal() + labs(title = "Removed Outlier Scatter Plot")
+cleanedData <- cleanedData %>% filter(address != "4652 Gratian Street Los Angeles")
+
+
+# 9650 Cedarbrook Drive Beverly Hills : 65959
+# 4652 Gratian Street Los Angeles : 65854
+
+data_normalized <- scale(data[,c("zip_code", "num_bed", "num_bath", "home_area", "price")])
+
+dbScan <- dbscan(data_normalized, eps=0.2, minPts=4)
+
+# Identifying points labeled as noise (-1 indicates noise/outliers)
+outliers <- which(dbScan$cluster == -1)
+
+# Examine outliers
+outlier_data <- data[outliers, ]
+print(outlier_data)
+
+# Basic plot of clusters and outliers
+plot(data_normalized[, c('home_area', 'price')], col = dbscan_result$cluster + 1L, pch = 16)
+points(data_normalized[outliers, 'home_area'], data_normalized[outliers, 'price'], col = 'red', pch = 19)
+legend("topright", legend = c("Clusters", "Outliers"), col = c("black", "red"), pch = 16)
+
+
 
 #Saving modified file
 write.csv(removed, "C:/Users/roriv/OneDrive/Documents/Spring 24 School Work/Data mining/ProjectCrawler/LACountyHomesDB.csv", row.names = FALSE)
